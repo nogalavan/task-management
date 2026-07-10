@@ -43,7 +43,7 @@ export async function getMyTasks(): Promise<DbResult<TaskRow[]>> {
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
-      .eq("assignee_id", user.id)
+      .eq("assigned_user", user.id)
       .order("due_date", { ascending: true });
 
     if (error) return { data: null, error: error.message };
@@ -85,9 +85,8 @@ export async function createTask(
       title: validated.title,
       description: validated.description ?? null,
       status: validated.status,
-      priority: validated.priority,
       project_id: validated.project_id,
-      assignee_id: validated.assignee_id ?? null,
+      assigned_user: validated.assigned_user ?? null,
       due_date: validated.due_date ?? null,
     };
 

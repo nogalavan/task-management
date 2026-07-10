@@ -51,7 +51,7 @@ export async function getProfileById(id: string): Promise<DbResult<ProfileRow>> 
   }
 }
 
-/** Returns all profiles (admin use). */
+/** Returns all profiles. */
 export async function listProfiles(): Promise<DbResult<ProfileRow[]>> {
   try {
     const supabase = await createClient();
@@ -87,7 +87,7 @@ export async function updateCurrentProfile(
 
     const { data, error } = await supabase
       .from("profiles")
-      .update({ ...validated, updated_at: new Date().toISOString() })
+      .update(validated)
       .eq("id", user.id)
       .select()
       .single();

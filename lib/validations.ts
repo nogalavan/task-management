@@ -10,14 +10,6 @@ export const ProjectCreateSchema = z.object({
     .min(2, "שם הפרויקט חייב להכיל לפחות 2 תווים")
     .max(100, "שם הפרויקט ארוך מדי"),
   description: z.string().max(500, "התיאור ארוך מדי").optional().nullable(),
-  status: z
-    .enum(["active", "archived", "completed"])
-    .default("active"),
-  color: z
-    .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "צבע לא תקין")
-    .optional()
-    .nullable(),
 });
 
 export const ProjectUpdateSchema = ProjectCreateSchema.partial();
@@ -35,14 +27,9 @@ export const TaskCreateSchema = z.object({
     .min(2, "כותרת המשימה חייבת להכיל לפחות 2 תווים")
     .max(200, "הכותרת ארוכה מדי"),
   description: z.string().max(2000, "התיאור ארוך מדי").optional().nullable(),
-  status: z
-    .enum(["todo", "in_progress", "done"])
-    .default("todo"),
-  priority: z
-    .enum(["low", "medium", "high", "urgent"])
-    .default("medium"),
+  status: z.enum(["todo", "in_progress", "done"]).default("todo"),
   project_id: z.string().uuid("מזהה פרויקט לא תקין"),
-  assignee_id: z.string().uuid("מזהה משתמש לא תקין").optional().nullable(),
+  assigned_user: z.string().uuid("מזהה משתמש לא תקין").optional().nullable(),
   due_date: z.string().optional().nullable(),
 });
 
@@ -61,7 +48,6 @@ export const ProfileUpdateSchema = z.object({
     .min(2, "שם חייב להכיל לפחות 2 תווים")
     .max(100, "השם ארוך מדי")
     .optional(),
-  avatar_url: z.string().url("כתובת URL לא תקינה").optional().nullable(),
 });
 
 export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>;
@@ -70,9 +56,6 @@ export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>;
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Parses and returns validated data, or throws with a formatted Hebrew message.
- */
 export function parseOrThrow<T>(schema: z.ZodSchema<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
