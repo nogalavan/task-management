@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Menu, Search, LogOut } from "lucide-react";
+import { Bell, Menu, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { logout } from "@/app/actions/auth";
@@ -45,25 +45,8 @@ function Navbar({ onMenuToggle, userName }: NavbarProps) {
         </div>
       </div>
 
-      {/* Center: search (desktop) */}
-      <div className="hidden md:flex flex-1 max-w-md mx-6">
-        <div className="relative w-full">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
-          <input
-            type="search"
-            placeholder="חיפוש..."
-            className="w-full h-9 rounded-xl border border-amber/30 bg-warm/60 pr-10 pl-4 text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber/30 focus:border-amber/50 transition-all"
-          />
-        </div>
-      </div>
-
       {/* Left side: actions + avatar + logout */}
       <div className="flex items-center gap-1.5">
-        {/* Mobile search */}
-        <Button variant="ghost" size="sm" aria-label="חיפוש" className="md:hidden">
-          <Search className="h-5 w-5" />
-        </Button>
-
         {/* Notifications */}
         <Button variant="ghost" size="sm" aria-label="התראות" className="relative">
           <Bell className="h-5 w-5" />

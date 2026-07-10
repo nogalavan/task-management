@@ -18,27 +18,27 @@ interface KanbanColumnProps {
 }
 
 const COLUMN_ACCENT: Record<string, string> = {
-  todo: "border-t-stone-300",
+  todo:        "border-t-amber",
   in_progress: "border-t-amber",
-  done: "border-t-green-400",
+  done:        "border-t-amber",
 };
 
 const COLUMN_BG: Record<string, string> = {
-  todo: "bg-stone-50/60",
+  todo:        "bg-amber/5",
   in_progress: "bg-amber/5",
-  done: "bg-green-50/40",
+  done:        "bg-amber/5",
 };
 
 const COLUMN_OVER_BG: Record<string, string> = {
-  todo: "bg-stone-100/80",
+  todo:        "bg-amber/15",
   in_progress: "bg-amber/15",
-  done: "bg-green-100/60",
+  done:        "bg-amber/15",
 };
 
 const COUNT_ACCENT: Record<string, string> = {
-  todo: "bg-stone-200 text-stone-600",
+  todo:        "bg-amber/20 text-amber-800",
   in_progress: "bg-amber/20 text-amber-800",
-  done: "bg-green-100 text-green-800",
+  done:        "bg-amber/20 text-amber-800",
 };
 
 export function KanbanColumn({
