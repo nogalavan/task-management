@@ -10,9 +10,12 @@ import {
   Settings,
   X,
   ChevronLeft,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
+import { logout } from "@/app/actions/auth";
+import { useTransition } from "react";
 
 interface NavItem {
   label: string;
@@ -36,6 +39,13 @@ interface SidebarProps {
 
 function Sidebar({ isOpen, isMobile, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+
+  function handleLogout() {
+    startTransition(async () => {
+      await logout();
+    });
+  }
 
   const sidebarContent = (
     <aside
@@ -112,7 +122,21 @@ function Sidebar({ isOpen, isMobile, onClose }: SidebarProps) {
       </nav>
 
       {/* Sidebar footer */}
-      <div className="border-t border-amber/20 p-4">
+      <div className="border-t border-amber/20 p-4 flex flex-col gap-3">
+        <button
+          onClick={handleLogout}
+          disabled={isPending}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+            "text-stone-600 hover:bg-red-50 hover:text-red-600",
+            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber",
+            isPending && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          <span>{isPending ? "מתנתק..." : "התנתקות"}</span>
+        </button>
+
         <div className="rounded-xl bg-warm p-3">
           <p className="text-xs font-medium text-stone-700">גרסה 1.0.0</p>
           <p className="text-xs text-stone-400 mt-0.5">מערכת ניהול משימות</p>

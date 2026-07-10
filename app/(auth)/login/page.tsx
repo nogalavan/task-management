@@ -1,10 +1,14 @@
 import Link from "next/link";
-import { Mail, Lock } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
+import { LoginForm } from "./_components/LoginForm";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ message?: string }>;
+}) {
+  const { message } = await searchParams;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream p-4">
       {/* Background decoration */}
@@ -30,39 +34,17 @@ export default function LoginPage() {
             התחברות לחשבון
           </h2>
 
-          <form className="flex flex-col gap-5" aria-label="טופס התחברות">
-            <Input
-              label="כתובת אימייל"
-              type="email"
-              placeholder="user@example.com"
-              autoComplete="email"
-              required
-              rightIcon={<Mail className="h-4 w-4" />}
-            />
-
-            <div>
-              <Input
-                label="סיסמה"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-                rightIcon={<Lock className="h-4 w-4" />}
-              />
-              <div className="mt-1.5 flex justify-start">
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-amber hover:text-amber/80 transition-colors"
-                >
-                  שכחת סיסמה?
-                </Link>
-              </div>
+          {/* Message from auth callback (e.g. expired link) */}
+          {message && (
+            <div
+              role="alert"
+              className="mb-5 rounded-xl border border-amber/30 bg-amber/10 px-4 py-3 text-sm text-stone-700"
+            >
+              {message}
             </div>
+          )}
 
-            <Button variant="primary" size="lg" fullWidth type="submit">
-              התחבר
-            </Button>
-          </form>
+          <LoginForm />
 
           <div className="mt-6 text-center">
             <p className="text-sm text-stone-500">
