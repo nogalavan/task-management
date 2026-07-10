@@ -30,6 +30,22 @@ export async function getTasksByProject(
   }
 }
 
+/** Returns all tasks across all projects (organisation-wide). */
+export async function getAllTasks(): Promise<DbResult<TaskRow[]>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) return { data: null, error: error.message };
+    return { data: data ?? [], error: null };
+  } catch (err) {
+    return { data: null, error: String(err) };
+  }
+}
+
 /** Returns all tasks assigned to the current user. */
 export async function getMyTasks(): Promise<DbResult<TaskRow[]>> {
   try {

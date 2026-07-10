@@ -1,55 +1,55 @@
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { KanbanBoard } from "@/components/ui/KanbanBoard";
-import {
-  PLACEHOLDER_TASKS,
-  PLACEHOLDER_PROJECTS,
-} from "@/lib/placeholder-data";
+import { AllTasksBoard } from "@/components/tasks/AllTasksBoard";
+import { getAllTasks } from "@/lib/tasks";
+import { listProfiles } from "@/lib/profiles";
+import { getProjects } from "@/lib/projects";
+import type { TaskWithAssignee } from "@/components/tasks/TaskCard";
 
-/** Build a projectId → name lookup so task cards can show the project name */
-const projectNameMap = Object.fromEntries(
-  PLACEHOLDER_PROJECTS.map((p) => [p.id, p.name])
-);
+export default async function TasksPage() {
+  const [tasksResult, profilesResult, projectsResult] = await Promise.all([
+    getAllTasks(),
+    listProfiles(),
+    getProjects(),
+  ]);
 
-export default function TasksPage() {
+  const profiles = profilesResult.data ?? [];
+  const projects = projectsResult.data ?? [];
+
+  // Build assignee name lookup
+  const profileMap: Record<string, string> = {};
+  for (const p of profiles) {
+    profileMap[p.id] = p.full_name ?? "משתמש";
+  }
+
+  // Build project name lookup
+  const projectMap: Record<string, string> = {};
+  for (const p of projects) {
+    projectMap[p.id] = p.name;
+  }
+
+  const tasks: TaskWithAssignee[] = (tasksResult.data ?? []).map((t) => ({
+    ...t,
+    assigneeName: t.assigned_user ? (profileMap[t.assigned_user] ?? "משתמש") : null,
+    projectName: projectMap[t.project_id] ?? undefined,
+  }));
+
   return (
     <div>
       <PageHeader
         title="משימות"
-        description="כל המשימות שלך מקובצות לפי סטטוס"
-        actions={
-          <Button variant="primary">
-            <Plus className="h-4 w-4" />
-            משימה חדשה
-          </Button>
-        }
+        description="כל המשימות מכלל הפרויקטים"
       />
 
-      {/* Filter strip */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        <Button variant="secondary" size="sm">
-          הכל
-        </Button>
-        <Button variant="ghost" size="sm">
-          המשימות שלי
-        </Button>
-        <div className="h-4 w-px bg-amber/30 mx-1" aria-hidden="true" />
-        {PLACEHOLDER_PROJECTS.map((p) => (
-          <Button key={p.id} variant="ghost" size="sm">
-            {p.name}
-          </Button>
-        ))}
-      </div>
-
-      {/* Kanban board — all tasks across all projects, grouped by status */}
-      <KanbanBoard
-        tasks={PLACEHOLDER_TASKS}
-        showProject
-        getProjectName={(projectId) =>
-          projectNameMap[projectId] ?? "פרויקט לא ידוע"
-        }
-      />
+      {tasksResult.error ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+        >
+          שגיאה בטעינת המשימות: {tasksResult.error}
+        </div>
+      ) : (
+        <AllTasksBoard tasks={tasks} profiles={profiles} projects={projects} />
+      )}
     </div>
   );
 }
