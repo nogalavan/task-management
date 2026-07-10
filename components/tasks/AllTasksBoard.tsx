@@ -1,17 +1,27 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Toaster, type ToastMessage } from "@/components/ui/Toast";
 import { KanbanColumn } from "./KanbanColumn";
+import { TaskCard, type TaskWithAssignee } from "./TaskCard";
 import { TaskModal } from "./TaskModal";
 import { TaskDeleteDialog } from "./TaskDeleteDialog";
-import type { TaskWithAssignee } from "./TaskCard";
-import type { ProfileRow, ProjectRow } from "@/lib/supabase/types";
+import { updateTaskAction } from "@/app/actions/tasks";
+import type { ProfileRow, ProjectRow, TaskStatus } from "@/lib/supabase/types";
 
-const COLUMNS: { id: "todo" | "in_progress" | "done"; label: string }[] = [
+const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: "todo", label: "לביצוע" },
   { id: "in_progress", label: "בתהליך" },
   { id: "done", label: "הושלם" },
@@ -25,12 +35,20 @@ interface AllTasksBoardProps {
   projects: ProjectRow[];
 }
 
-export function AllTasksBoard({ tasks, profiles, projects }: AllTasksBoardProps) {
+export function AllTasksBoard({ tasks: initialTasks, profiles, projects }: AllTasksBoardProps) {
+  // Local task state for optimistic DnD updates
+  const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
+  const [activeTask, setActiveTask] = useState<TaskWithAssignee | null>(null);
+
   const [filter, setFilter] = useState<FilterMode>("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskWithAssignee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TaskWithAssignee | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   const addToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
@@ -44,7 +62,47 @@ export function AllTasksBoard({ tasks, profiles, projects }: AllTasksBoardProps)
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // ---------------------------------------------------------------------------
+  // DnD handlers
+  // ---------------------------------------------------------------------------
+
+  function handleDragStart(event: DragStartEvent) {
+    const task = tasks.find((t) => t.id === event.active.id);
+    setActiveTask(task ?? null);
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setActiveTask(null);
+
+    if (!over) return;
+
+    const taskId = active.id as string;
+    const newStatus = over.id as TaskStatus;
+    const task = tasks.find((t) => t.id === taskId);
+
+    if (!task || task.status === newStatus) return;
+
+    // Optimistic update
+    const prevTasks = tasks;
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+    );
+
+    // Persist to Supabase
+    const result = await updateTaskAction(taskId, task.project_id, { status: newStatus });
+
+    if (result.error) {
+      // Revert on failure
+      setTasks(prevTasks);
+      addToast("שגיאה בשמירת הסטטוס. נסה שוב.", "error");
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Group tasks by status
+  // ---------------------------------------------------------------------------
+
   const grouped: Record<string, TaskWithAssignee[]> = {
     todo: [],
     in_progress: [],
@@ -53,8 +111,6 @@ export function AllTasksBoard({ tasks, profiles, projects }: AllTasksBoardProps)
   for (const task of tasks) {
     if (grouped[task.status]) grouped[task.status].push(task);
   }
-
-  const totalVisible = tasks.length;
 
   if (tasks.length === 0) {
     return (
@@ -86,12 +142,10 @@ export function AllTasksBoard({ tasks, profiles, projects }: AllTasksBoardProps)
           המשימות שלי
         </Button>
 
-        {/* Vertical divider */}
         {projects.length > 0 && (
           <div className="h-4 w-px bg-amber/30 mx-1" aria-hidden="true" />
         )}
 
-        {/* Per-project filter buttons — coming soon */}
         {projects.map((p) => (
           <Button key={p.id} variant="ghost" size="sm" disabled title={p.name}>
             {p.name}
@@ -101,8 +155,8 @@ export function AllTasksBoard({ tasks, profiles, projects }: AllTasksBoardProps)
 
       {/* Count summary */}
       <div className="text-sm text-stone-500 mb-4">
-        <span className="font-medium text-stone-700">{totalVisible}</span>{" "}
-        {totalVisible === 1 ? "משימה" : "משימות"} מכלל הפרויקטים
+        <span className="font-medium text-stone-700">{tasks.length}</span>{" "}
+        {tasks.length === 1 ? "משימה" : "משימות"} מכלל הפרויקטים
         {filter === "mine" && (
           <span className="mr-2 text-amber text-xs font-medium">
             (סינון לפי משימות שלי — בקרוב)
@@ -110,26 +164,54 @@ export function AllTasksBoard({ tasks, profiles, projects }: AllTasksBoardProps)
         )}
       </div>
 
-      {/* Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {COLUMNS.map((col) => (
-          <KanbanColumn
-            key={col.id}
-            columnId={col.id}
-            label={col.label}
-            tasks={grouped[col.id]}
-            onEditTask={(task) => { setEditingTask(task); setModalOpen(true); }}
-            onDeleteTask={(task) => setDeleteTarget(task)}
-          />
-        ))}
-      </div>
+      {/* DnD context wraps the board */}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {COLUMNS.map((col) => (
+            <KanbanColumn
+              key={col.id}
+              columnId={col.id}
+              label={col.label}
+              tasks={grouped[col.id]}
+              onEditTask={(task) => { setEditingTask(task); setModalOpen(true); }}
+              onDeleteTask={(task) => setDeleteTarget(task)}
+            />
+          ))}
+        </div>
+
+        {/* Floating drag preview */}
+        <DragOverlay dropAnimation={{ duration: 150, easing: "ease" }}>
+          {activeTask && (
+            <div className="rotate-1 scale-105 opacity-95 shadow-xl rounded-xl">
+              <TaskCard
+                task={activeTask}
+                onEdit={() => {}}
+                onDelete={() => {}}
+                isDragging
+              />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
 
       {/* Edit modal */}
       {editingTask && (
         <TaskModal
           isOpen={modalOpen}
           onClose={() => { setModalOpen(false); setEditingTask(null); }}
-          onSuccess={(msg) => addToast(msg, "success")}
+          onSuccess={(msg) => {
+            addToast(msg, "success");
+            // Sync local state after edit
+            setTasks((prev) =>
+              prev.map((t) =>
+                t.id === editingTask.id ? { ...t, ...editingTask } : t
+              )
+            );
+          }}
           projectId={editingTask.project_id}
           profiles={profiles}
           task={editingTask}
@@ -141,7 +223,11 @@ export function AllTasksBoard({ tasks, profiles, projects }: AllTasksBoardProps)
         <TaskDeleteDialog
           isOpen={Boolean(deleteTarget)}
           onClose={() => setDeleteTarget(null)}
-          onSuccess={(msg) => addToast(msg, "success")}
+          onSuccess={(msg) => {
+            addToast(msg, "success");
+            setTasks((prev) => prev.filter((t) => t.id !== deleteTarget.id));
+            setDeleteTarget(null);
+          }}
           taskId={deleteTarget.id}
           taskTitle={deleteTarget.title}
           projectId={deleteTarget.project_id}

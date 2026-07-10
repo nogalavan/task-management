@@ -75,11 +75,11 @@ export async function getProjectsWithDetails(): Promise<DbResult<ProjectWithDeta
     if (creatorIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name")
         .in("id", creatorIds);
 
       for (const p of profiles ?? []) {
-        profileMap[p.id] = p.full_name ?? p.email ?? "משתמש";
+        profileMap[p.id] = p.full_name ?? "משתמש";
       }
     }
 
@@ -122,10 +122,10 @@ export async function getProjectByIdWithDetails(
     if (row.created_by) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, email")
+        .select("full_name")
         .eq("id", row.created_by)
         .single();
-      creatorName = profile?.full_name ?? profile?.email ?? "משתמש";
+      creatorName = profile?.full_name ?? "משתמש";
     }
 
     return {

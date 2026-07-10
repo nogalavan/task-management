@@ -1,12 +1,13 @@
 "use client";
 
+import { useDroppable } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
 import { cn } from "@/utils/cn";
-import { TaskCard, type TaskWithAssignee } from "./TaskCard";
+import { DraggableTaskCard } from "./DraggableTaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
+import type { TaskWithAssignee } from "./TaskCard";
 
 interface KanbanColumnProps {
-  /** Column id matches TaskStatus — kept as a string prop for Phase 6 drag & drop compatibility */
   columnId: "todo" | "in_progress" | "done";
   label: string;
   tasks: TaskWithAssignee[];
@@ -17,9 +18,21 @@ interface KanbanColumnProps {
 }
 
 const COLUMN_ACCENT: Record<string, string> = {
-  todo: "border-t-stone-300 bg-stone-50/60",
-  in_progress: "border-t-amber bg-amber/5",
-  done: "border-t-green-400 bg-green-50/40",
+  todo: "border-t-stone-300",
+  in_progress: "border-t-amber",
+  done: "border-t-green-400",
+};
+
+const COLUMN_BG: Record<string, string> = {
+  todo: "bg-stone-50/60",
+  in_progress: "bg-amber/5",
+  done: "bg-green-50/40",
+};
+
+const COLUMN_OVER_BG: Record<string, string> = {
+  todo: "bg-stone-100/80",
+  in_progress: "bg-amber/15",
+  done: "bg-green-100/60",
 };
 
 const COUNT_ACCENT: Record<string, string> = {
@@ -37,12 +50,16 @@ export function KanbanColumn({
   onEditTask,
   onDeleteTask,
 }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: columnId });
+
   return (
     <div
       className={cn(
         "flex flex-col rounded-2xl border border-amber/15 border-t-4 min-w-[280px]",
         "shadow-[0_2px_8px_0_rgba(212,163,115,0.06)]",
-        COLUMN_ACCENT[columnId]
+        "transition-colors duration-150",
+        COLUMN_ACCENT[columnId],
+        isOver ? COLUMN_OVER_BG[columnId] : COLUMN_BG[columnId]
       )}
       aria-label={`עמודה: ${label}`}
       data-column-id={columnId}
@@ -72,9 +89,12 @@ export function KanbanColumn({
         )}
       </div>
 
-      {/* Task list — data-droppable for Phase 6 */}
+      {/* Droppable task list */}
       <div
-        className="flex flex-col gap-2.5 px-3 pb-3 flex-1 min-h-[120px]"
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-col gap-2.5 px-3 pb-3 flex-1 min-h-[120px] rounded-b-2xl transition-colors duration-150"
+        )}
         data-droppable={columnId}
       >
         {isLoading ? (
@@ -83,12 +103,21 @@ export function KanbanColumn({
             <TaskCardSkeleton />
           </>
         ) : tasks.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-xs text-stone-400">
-            אין משימות
+          <div
+            className={cn(
+              "flex items-center justify-center py-8 rounded-xl border-2 border-dashed transition-colors",
+              isOver
+                ? "border-amber/50 text-amber"
+                : "border-stone-200 text-stone-400"
+            )}
+          >
+            <span className="text-xs">
+              {isOver ? "שחרר כאן" : "אין משימות"}
+            </span>
           </div>
         ) : (
           tasks.map((task) => (
-            <TaskCard
+            <DraggableTaskCard
               key={task.id}
               task={task}
               onEdit={onEditTask}
