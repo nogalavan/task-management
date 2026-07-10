@@ -1,165 +1,196 @@
+import Link from "next/link";
 import {
   FolderKanban,
   CheckSquare,
   Clock,
   ListTodo,
-  TrendingUp,
-  Users,
+  Calendar,
+  Activity,
+  BarChart2,
+  Plus,
+  Trophy,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Avatar } from "@/components/ui/Avatar";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { TaskStatusChart } from "@/components/dashboard/TaskStatusChart";
+import { TasksPerProjectChart } from "@/components/dashboard/TasksPerProjectChart";
+import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { TopPerformers } from "@/components/dashboard/TopPerformers";
+import { getDashboardStats } from "@/lib/dashboard";
 
-const stats = [
-  {
-    label: "פרויקטים פעילים",
-    value: "—",
-    icon: FolderKanban,
-    color: "text-amber",
-    bg: "bg-amber/10",
-  },
-  {
-    label: "משימות שהושלמו",
-    value: "—",
-    icon: CheckSquare,
-    color: "text-green-600",
-    bg: "bg-sage/30",
-  },
-  {
-    label: "בתהליך",
-    value: "—",
-    icon: Clock,
-    color: "text-blue-500",
-    bg: "bg-blue-50",
-  },
-  {
-    label: "לביצוע",
-    value: "—",
-    icon: ListTodo,
-    color: "text-stone-500",
-    bg: "bg-stone-100",
-  },
-];
+export default async function DashboardPage() {
+  const { data: stats, error } = await getDashboardStats();
 
-const recentActivity = [
-  { user: "ישראל ישראלי", action: "יצר משימה חדשה", time: "לפני דקה", project: "עיצוב מוצר" },
-  { user: "שרה כהן", action: "השלים משימה", time: "לפני 10 דקות", project: "פיתוח Backend" },
-  { user: "דוד לוי", action: "עדכן סטטוס", time: "לפני שעה", project: "שיווק Q3" },
-];
+  if (error || !stats) {
+    return (
+      <div>
+        <PageHeader title="לוח ראשי" description="סקירה כללית של הפרויקטים והמשימות" />
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+          שגיאה בטעינת הנתונים: {error}
+        </div>
+      </div>
+    );
+  }
 
-export default function DashboardPage() {
+  const statCards = [
+    {
+      label:     "פרויקטים",
+      value:     stats.projectsCount,
+      icon:      FolderKanban,
+      iconColor: "text-amber",
+      iconBg:    "bg-amber/10",
+      caption:   "כלל הפרויקטים",
+    },
+    {
+      label:     "משימות",
+      value:     stats.tasksCount,
+      icon:      ListTodo,
+      iconColor: "text-stone-500",
+      iconBg:    "bg-stone-100",
+      caption:   "סה״כ",
+    },
+    {
+      label:     "הושלמו",
+      value:     stats.doneCount,
+      icon:      CheckSquare,
+      iconColor: "text-green-600",
+      iconBg:    "bg-green-50",
+      caption:   stats.tasksCount > 0
+        ? `${Math.round((stats.doneCount / stats.tasksCount) * 100)}% מהמשימות`
+        : undefined,
+    },
+    {
+      label:     "בתהליך",
+      value:     stats.inProgressCount,
+      icon:      Clock,
+      iconColor: "text-amber-600",
+      iconBg:    "bg-amber/10",
+      caption:   `${stats.todoCount} ממתינות`,
+    },
+  ];
+
   return (
     <div>
       <PageHeader
         title="לוח ראשי"
-        description="סקירה כללית של כל הפרויקטים והמשימות שלך"
+        description="סקירה כללית של כל הפרויקטים והמשימות"
         actions={
-          <Button variant="primary" size="md">
-            <FolderKanban className="h-4 w-4" />
-            פרויקט חדש
-          </Button>
+          <Link href="/projects">
+            <Button variant="primary" size="md">
+              <Plus className="h-4 w-4" />
+              פרויקט חדש
+            </Button>
+          </Link>
         }
       />
 
-      {/* Stats grid */}
+      {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-8">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label} padding="md">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-stone-500 font-medium mb-1">
-                    {stat.label}
-                  </p>
-                  <p className="text-3xl font-bold text-stone-800">
-                    {stat.value}
-                  </p>
-                </div>
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}
-                >
-                  <Icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-              </div>
-              <div className="mt-3 flex items-center gap-1 text-xs text-stone-400">
-                <TrendingUp className="h-3 w-3" />
-                <span>יתעדכן בקרוב</span>
-              </div>
-            </Card>
-          );
-        })}
+        {statCards.map((s) => (
+          <StatCard key={s.label} {...s} />
+        ))}
       </div>
 
-      {/* Content grid */}
+      {/* ── Main content grid ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Recent projects placeholder */}
-        <div className="lg:col-span-2">
+
+        {/* LEFT/CENTER column — charts */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+
+          {/* Status donut chart */}
           <Card padding="none">
             <CardHeader className="px-5 pt-5">
-              <CardTitle>פרויקטים אחרונים</CardTitle>
-              <Badge variant="default">פעילים</Badge>
+              <CardTitle>
+                <span className="flex items-center gap-2">
+                  <BarChart2 className="h-4 w-4 text-amber" />
+                  משימות לפי סטטוס
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardBody className="px-5 pb-5">
+              <TaskStatusChart data={stats.statusBreakdown} />
+            </CardBody>
+          </Card>
+
+          {/* Tasks per project bar chart */}
+          {stats.tasksByProject.length > 0 && (
+            <Card padding="none">
+              <CardHeader className="px-5 pt-5">
+                <CardTitle>
+                  <span className="flex items-center gap-2">
+                    <FolderKanban className="h-4 w-4 text-amber" />
+                    משימות לפי פרויקט
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardBody className="px-5 pb-5">
+                <TasksPerProjectChart data={stats.tasksByProject} />
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Upcoming tasks */}
+          <Card padding="none">
+            <CardHeader className="px-5 pt-5">
+              <CardTitle>
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-amber" />
+                  משימות קרובות
+                </span>
+              </CardTitle>
+              <Link href="/tasks">
+                <Button variant="ghost" size="sm" className="text-xs">
+                  הצג הכל
+                </Button>
+              </Link>
             </CardHeader>
             <CardBody>
-              {/* Placeholder rows */}
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between px-5 py-4 border-t border-amber/10 first:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-amber/15 flex items-center justify-center">
-                      <FolderKanban className="h-4 w-4 text-amber" />
-                    </div>
-                    <div>
-                      <div className="h-4 w-32 rounded bg-sage-light animate-pulse" />
-                      <div className="mt-1 h-3 w-20 rounded bg-sage-light/70 animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-6 w-16 rounded-full bg-sage-light animate-pulse" />
-                    <Avatar name="משתמש" size="xs" />
-                  </div>
-                </div>
-              ))}
-              <div className="px-5 py-4 border-t border-amber/10">
-                <Button variant="ghost" size="sm" fullWidth>
-                  הצג את כל הפרויקטים
-                </Button>
-              </div>
+              <UpcomingTasks tasks={stats.upcomingTasks} />
             </CardBody>
           </Card>
         </div>
 
-        {/* Activity feed */}
-        <div>
+        {/* RIGHT column — recent activity + top performers */}
+        <div className="flex flex-col gap-6">
           <Card padding="none">
             <CardHeader className="px-5 pt-5">
-              <CardTitle>פעילות אחרונה</CardTitle>
-              <Users className="h-4 w-4 text-stone-400" />
+              <CardTitle>
+                <span className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-amber" />
+                  פעילות אחרונה
+                </span>
+              </CardTitle>
             </CardHeader>
             <CardBody>
-              <ul className="flex flex-col">
-                {recentActivity.map((item, i) => (
-                  <li
-                    key={i}
-                    className="flex gap-3 px-5 py-4 border-t border-amber/10 first:border-0"
-                  >
-                    <Avatar name={item.user} size="xs" className="mt-0.5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm text-stone-700">
-                        <span className="font-medium">{item.user}</span>{" "}
-                        {item.action}
-                      </p>
-                      <p className="text-xs text-stone-400 mt-0.5">
-                        {item.project} · {item.time}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <RecentActivity entries={stats.recentActivity} />
+            </CardBody>
+            <div className="px-5 pb-4 pt-2 border-t border-amber/10">
+              <Link href="/tasks">
+                <Button variant="ghost" size="sm" fullWidth>
+                  כל המשימות
+                </Button>
+              </Link>
+            </div>
+          </Card>
+
+          {/* Top performers */}
+          <Card padding="none">
+            <CardHeader className="px-5 pt-5">
+              <CardTitle>
+                <span className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-amber" />
+                  משימות שהושלמו לפי משתמש
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              <TopPerformers
+                performers={stats.topPerformers}
+                totalDone={stats.doneCount}
+              />
             </CardBody>
           </Card>
         </div>

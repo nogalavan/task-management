@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragEndEvent,
@@ -33,9 +34,17 @@ interface TaskBoardProps {
 }
 
 export function TaskBoard({ projectId, tasks: initialTasks, profiles }: TaskBoardProps) {
+  const router = useRouter();
+
   // Local state for optimistic drag & drop
   const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<TaskWithAssignee | null>(null);
+
+  // Re-sync whenever the server component delivers fresh initialTasks
+  // (triggered by router.refresh() after create/delete)
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskWithAssignee | null>(null);
@@ -177,8 +186,10 @@ export function TaskBoard({ projectId, tasks: initialTasks, profiles }: TaskBoar
         onClose={() => { setModalOpen(false); setEditingTask(null); }}
         onSuccess={(msg) => {
           addToast(msg, "success");
-          // After create/edit, the page revalidates via server action;
-          // local state will sync on next server render.
+          setModalOpen(false);
+          setEditingTask(null);
+          // Refresh server component so initialTasks updates and useEffect re-syncs
+          router.refresh();
         }}
         projectId={projectId}
         profiles={profiles}
@@ -195,6 +206,7 @@ export function TaskBoard({ projectId, tasks: initialTasks, profiles }: TaskBoar
             addToast(msg, "success");
             setTasks((prev) => prev.filter((t) => t.id !== deleteTarget.id));
             setDeleteTarget(null);
+            router.refresh();
           }}
           taskId={deleteTarget.id}
           taskTitle={deleteTarget.title}

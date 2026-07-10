@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragEndEvent,
@@ -36,9 +37,16 @@ interface AllTasksBoardProps {
 }
 
 export function AllTasksBoard({ tasks: initialTasks, profiles, projects }: AllTasksBoardProps) {
+  const router = useRouter();
+
   // Local task state for optimistic DnD updates
   const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<TaskWithAssignee | null>(null);
+
+  // Re-sync whenever server component delivers fresh initialTasks
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const [filter, setFilter] = useState<FilterMode>("all");
   const [modalOpen, setModalOpen] = useState(false);
@@ -205,12 +213,9 @@ export function AllTasksBoard({ tasks: initialTasks, profiles, projects }: AllTa
           onClose={() => { setModalOpen(false); setEditingTask(null); }}
           onSuccess={(msg) => {
             addToast(msg, "success");
-            // Sync local state after edit
-            setTasks((prev) =>
-              prev.map((t) =>
-                t.id === editingTask.id ? { ...t, ...editingTask } : t
-              )
-            );
+            setModalOpen(false);
+            setEditingTask(null);
+            router.refresh();
           }}
           projectId={editingTask.project_id}
           profiles={profiles}
@@ -227,6 +232,7 @@ export function AllTasksBoard({ tasks: initialTasks, profiles, projects }: AllTa
             addToast(msg, "success");
             setTasks((prev) => prev.filter((t) => t.id !== deleteTarget.id));
             setDeleteTarget(null);
+            router.refresh();
           }}
           taskId={deleteTarget.id}
           taskTitle={deleteTarget.title}

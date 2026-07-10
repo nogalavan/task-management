@@ -26,7 +26,9 @@ export function DraggableTaskCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+    // suppressHydrationWarning silences the aria-describedby mismatch caused by
+    // @dnd-kit generating different DndDescribedBy-N counters on server vs client.
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes} suppressHydrationWarning>
       <TaskCard
         task={task}
         onEdit={onEdit}

@@ -7,6 +7,7 @@ import {
   deleteProject,
 } from "@/lib/projects";
 import { ProjectCreateSchema, ProjectUpdateSchema } from "@/lib/validations";
+import { logActivity } from "@/lib/activity";
 
 export type ActionResult = { error: string | null };
 
@@ -25,7 +26,15 @@ export async function createProjectAction(
   const result = await createProject(parsed.data);
   if (result.error) return { error: result.error };
 
+  logActivity(
+    "created_project",
+    { project_name: parsed.data.name },
+    null,
+    result.data?.id
+  );
+
   revalidatePath("/projects");
+  revalidatePath("/dashboard");
   return { error: null };
 }
 
