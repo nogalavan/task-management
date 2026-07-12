@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = { title: "משימות" };
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AllTasksBoard } from "@/components/tasks/AllTasksBoard";
 import { getAllTasks } from "@/lib/tasks";

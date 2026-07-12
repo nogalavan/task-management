@@ -1,12 +1,36 @@
-import { Camera, Mail, User, Phone } from "lucide-react";
+import type { Metadata } from "next";
+import { Mail, User, CheckSquare, FolderKanban, Trash2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { UpdateNameForm } from "@/components/profile/UpdateNameForm";
+import { UpdatePasswordForm } from "@/components/profile/UpdatePasswordForm";
+import { DeleteAccountButton } from "@/components/profile/DeleteAccountButton";
+import { getCurrentUser } from "@/lib/supabase/auth";
+import { getCurrentProfile } from "@/lib/profiles";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function ProfilePage() {
+export const metadata: Metadata = { title: "הפרופיל שלי | ניהול משימות" };
+
+export default async function ProfilePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const profileResult = await getCurrentProfile();
+  const profile = profileResult.data;
+
+  const fullName = profile?.full_name ?? (user.user_metadata?.full_name as string) ?? "משתמש";
+  const email = user.email ?? "";
+
+  // Fetch quick stats
+  const supabase = await createClient();
+  const [{ count: doneCount }, { count: projectCount }] = await Promise.all([
+    supabase.from("tasks").select("id", { count: "exact", head: true }).eq("assigned_user", user.id).eq("status", "done"),
+    supabase.from("projects").select("id", { count: "exact", head: true }),
+  ]);
+
   return (
     <div>
       <PageHeader
@@ -15,135 +39,96 @@ export default function ProfilePage() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Profile card */}
-        <div className="lg:col-span-1">
+        {/* ── Left sidebar: avatar + stats ── */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
           <Card padding="lg" className="text-center">
             <div className="relative inline-block mb-4">
-              <Avatar name="משתמש ראשי" size="xl" className="mx-auto" />
-              <button
-                className="absolute bottom-0 left-0 flex h-8 w-8 items-center justify-center rounded-full bg-amber text-white shadow-md hover:bg-amber/90 transition-colors"
-                aria-label="שנה תמונת פרופיל"
-              >
-                <Camera className="h-4 w-4" />
-              </button>
+              <Avatar name={fullName} size="xl" className="mx-auto" />
             </div>
 
-            <h2 className="text-lg font-bold text-stone-800">משתמש ראשי</h2>
-            <p className="text-sm text-stone-500 mt-0.5">user@example.com</p>
+            <h2 className="text-lg font-bold text-stone-800">{fullName}</h2>
+            <p className="text-sm text-stone-500 mt-0.5">{email}</p>
 
             <div className="mt-4">
               <Badge variant="success">חבר פעיל</Badge>
             </div>
 
-            <div className="mt-6 flex flex-col gap-2 text-sm text-stone-600">
+            <div className="mt-5 flex flex-col gap-2 text-sm text-stone-500">
               <div className="flex items-center justify-center gap-2">
-                <Mail className="h-4 w-4 text-amber" />
-                <span>user@example.com</span>
+                <Mail className="h-4 w-4 text-amber flex-shrink-0" />
+                <span className="truncate">{email}</span>
               </div>
               <div className="flex items-center justify-center gap-2">
-                <User className="h-4 w-4 text-amber" />
-                <span>חבר</span>
+                <User className="h-4 w-4 text-amber flex-shrink-0" />
+                <span>{fullName}</span>
               </div>
             </div>
           </Card>
 
-          {/* Stats */}
-          <Card padding="md" className="mt-4">
+          {/* Quick stats */}
+          <Card padding="md">
             <CardHeader>
               <CardTitle>סטטיסטיקות</CardTitle>
             </CardHeader>
             <CardBody>
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: "משימות שהושלמו", value: "—" },
-                  { label: "פרויקטים פעילים", value: "—" },
-                  { label: "ימים ברציפות", value: "—" },
-                ].map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="flex items-center justify-between py-2 border-b border-amber/10 last:border-0"
-                  >
-                    <span className="text-sm text-stone-600">{stat.label}</span>
-                    <span className="text-sm font-semibold text-stone-800">
-                      {stat.value}
-                    </span>
+              <div className="flex flex-col gap-0">
+                <div className="flex items-center justify-between py-3 border-b border-amber/10">
+                  <div className="flex items-center gap-2 text-sm text-stone-600">
+                    <CheckSquare className="h-4 w-4 text-green-500" />
+                    <span>משימות שהושלמו</span>
                   </div>
-                ))}
+                  <span className="text-sm font-bold text-stone-800">{doneCount ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-2 text-sm text-stone-600">
+                    <FolderKanban className="h-4 w-4 text-amber" />
+                    <span>פרויקטים זמינים</span>
+                  </div>
+                  <span className="text-sm font-bold text-stone-800">{projectCount ?? 0}</span>
+                </div>
               </div>
             </CardBody>
           </Card>
         </div>
 
-        {/* Edit form */}
+        {/* ── Main area: forms ── */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <Card padding="lg">
             <CardHeader>
               <CardTitle>פרטים אישיים</CardTitle>
             </CardHeader>
             <CardBody>
-              <form className="flex flex-col gap-5" aria-label="עדכון פרטים אישיים">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <Input
-                    label="שם פרטי"
-                    placeholder="ישראל"
-                    defaultValue=""
-                    rightIcon={<User className="h-4 w-4" />}
-                  />
-                  <Input
-                    label="שם משפחה"
-                    placeholder="ישראלי"
-                    defaultValue=""
-                  />
-                </div>
-                <Input
-                  label="כתובת אימייל"
-                  type="email"
-                  placeholder="user@example.com"
-                  defaultValue=""
-                  rightIcon={<Mail className="h-4 w-4" />}
-                />
-                <Input
-                  label="מספר טלפון"
-                  type="tel"
-                  placeholder="050-0000000"
-                  defaultValue=""
-                  rightIcon={<Phone className="h-4 w-4" />}
-                />
-                <div className="flex justify-start gap-3 pt-2">
-                  <Button variant="primary">שמור שינויים</Button>
-                  <Button variant="ghost">ביטול</Button>
-                </div>
-              </form>
+              <UpdateNameForm currentName={fullName} />
             </CardBody>
           </Card>
 
-          {/* Password change */}
           <Card padding="lg">
             <CardHeader>
               <CardTitle>שינוי סיסמה</CardTitle>
             </CardHeader>
             <CardBody>
-              <form className="flex flex-col gap-5" aria-label="שינוי סיסמה">
-                <Input
-                  label="סיסמה נוכחית"
-                  type="password"
-                  placeholder="••••••••"
-                />
-                <Input
-                  label="סיסמה חדשה"
-                  type="password"
-                  placeholder="••••••••"
-                  hint="לפחות 8 תווים"
-                />
-                <Input
-                  label="אימות סיסמה חדשה"
-                  type="password"
-                  placeholder="••••••••"
-                />
-                <div className="flex justify-start pt-2">
-                  <Button variant="primary">עדכן סיסמה</Button>
+              <UpdatePasswordForm />
+            </CardBody>
+          </Card>
+
+          {/* Danger zone */}
+          <Card padding="lg" className="border border-red-200">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-red-500" />
+                <CardTitle className="text-red-600">אזור מסוכן</CardTitle>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-stone-700">מחיקת חשבון</p>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    פעולה זו בלתי הפיכה. כל הנתונים יימחקו לצמיתות.
+                  </p>
                 </div>
-              </form>
+                <DeleteAccountButton />
+              </div>
             </CardBody>
           </Card>
         </div>

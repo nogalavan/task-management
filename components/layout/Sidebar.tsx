@@ -160,7 +160,7 @@ function Sidebar({ isOpen, isMobile, onClose }: SidebarProps) {
         <div
           className={cn(
             "fixed inset-y-0 right-0 z-50 transition-transform duration-300 ease-in-out",
-            isOpen ? "translate-x-0" : "translate-x-full"
+            isOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
           )}
         >
           {sidebarContent}

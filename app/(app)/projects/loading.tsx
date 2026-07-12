@@ -7,10 +7,8 @@ export default function ProjectsLoading() {
       <PageHeader
         title="פרויקטים"
         description="כל הפרויקטים של הארגון במקום אחד"
+        actions={<div className="h-10 w-32 rounded-xl bg-stone-200 animate-pulse" />}
       />
-      <div className="flex items-center justify-end mb-6">
-        <div className="h-10 w-32 rounded-xl bg-stone-200 animate-pulse" />
-      </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <ProjectCardSkeleton key={i} />

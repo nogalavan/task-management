@@ -1,4 +1,7 @@
-import { Bell, Shield, Globe, Palette, Trash2 } from "lucide-react";
+import type { Metadata } from "next";
+import { Bell, Shield, Globe, Palette } from "lucide-react";
+
+export const metadata: Metadata = { title: "הגדרות" };
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -153,26 +156,6 @@ export default function SettingsPage() {
           </CardBody>
         </Card>
 
-        {/* Danger zone */}
-        <Card padding="lg" className="border-red-200 border">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-red-500" />
-              <CardTitle className="text-red-600">אזור מסוכן</CardTitle>
-            </div>
-          </CardHeader>
-          <CardBody>
-            <SettingRow
-              label="מחיקת חשבון"
-              description="פעולה זו בלתי הפיכה. כל הנתונים יימחקו לצמיתות."
-              action={
-                <Button variant="danger" size="sm">
-                  מחק חשבון
-                </Button>
-              }
-            />
-          </CardBody>
-        </Card>
       </div>
     </div>
   );

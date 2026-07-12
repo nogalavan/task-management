@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const { getProjectByIdWithDetails } = await import("@/lib/projects");
+  const { data } = await getProjectByIdWithDetails(id);
+  return { title: data ? `${data.name} | פרויקטים` : "פרויקט" };
+}
 import { ArrowRight, CheckSquare, Calendar, User } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TaskBoard } from "@/components/tasks/TaskBoard";

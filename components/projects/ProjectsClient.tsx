@@ -5,6 +5,7 @@ import { Plus, FolderKanban } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Toaster, type ToastMessage } from "@/components/ui/Toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { ProjectModal } from "@/components/projects/ProjectModal";
 import { DeleteDialog } from "@/components/projects/DeleteDialog";
@@ -59,13 +60,16 @@ export function ProjectsClient({ projects }: ProjectsClientProps) {
 
   return (
     <>
-      {/* Header actions */}
-      <div className="flex items-center justify-end mb-6">
-        <Button variant="primary" onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          פרויקט חדש
-        </Button>
-      </div>
+      <PageHeader
+        title="פרויקטים"
+        description="כל הפרויקטים של הארגון במקום אחד"
+        actions={
+          <Button variant="primary" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            פרויקט חדש
+          </Button>
+        }
+      />
 
       {projects.length === 0 ? (
         <EmptyState

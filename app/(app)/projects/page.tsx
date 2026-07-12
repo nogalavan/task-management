@@ -1,4 +1,6 @@
-import { PageHeader } from "@/components/layout/PageHeader";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "פרויקטים" };
 import { ProjectsClient } from "@/components/projects/ProjectsClient";
 import { getProjectsWithDetails } from "@/lib/projects";
 
@@ -7,11 +9,6 @@ export default async function ProjectsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="פרויקטים"
-        description="כל הפרויקטים של הארגון במקום אחד"
-      />
-
       {error ? (
         <div
           role="alert"

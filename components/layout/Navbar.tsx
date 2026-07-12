@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Menu, LogOut } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { logout } from "@/app/actions/auth";
@@ -29,7 +29,7 @@ function Navbar({ onMenuToggle, userName }: NavbarProps) {
           size="sm"
           onClick={onMenuToggle}
           aria-label="תפריט"
-          className="md:hidden"
+          className=""
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -47,12 +47,6 @@ function Navbar({ onMenuToggle, userName }: NavbarProps) {
 
       {/* Left side: actions + avatar + logout */}
       <div className="flex items-center gap-1.5">
-        {/* Notifications */}
-        <Button variant="ghost" size="sm" aria-label="התראות" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber" aria-hidden="true" />
-        </Button>
-
         {/* User avatar */}
         <div className="mr-1 flex items-center gap-2">
           <Avatar name={userName} size="sm" />

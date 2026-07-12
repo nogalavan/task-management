@@ -9,8 +9,18 @@ const heebo = Heebo({
 });
 
 export const metadata: Metadata = {
-  title: "ניהול משימות",
-  description: "מערכת ניהול משימות ופרויקטים",
+  title: {
+    default: "ניהול משימות",
+    template: "%s | ניהול משימות",
+  },
+  description: "ניהול פרויקטים ומשימות בצורה פשוטה וחכמה — Hebrew-first collaborative workspace",
+  keywords: ["ניהול משימות", "פרויקטים", "Kanban", "RTL", "Hebrew"],
+  openGraph: {
+    title: "מערכת ניהול משימות",
+    description: "ניהול פרויקטים ומשימות בצורה פשוטה וחכמה",
+    locale: "he_IL",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

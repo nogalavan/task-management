@@ -151,18 +151,20 @@ export function TaskBoard({ projectId, tasks: initialTasks, profiles }: TaskBoar
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {COLUMNS.map((col) => (
-            <KanbanColumn
-              key={col.id}
-              columnId={col.id}
-              label={col.label}
-              tasks={grouped[col.id]}
-              onAddTask={() => openCreate(col.id)}
-              onEditTask={openEdit}
-              onDeleteTask={(task) => setDeleteTarget(task)}
-            />
-          ))}
+        <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-w-[640px] md:min-w-0">
+            {COLUMNS.map((col) => (
+              <KanbanColumn
+                key={col.id}
+                columnId={col.id}
+                label={col.label}
+                tasks={grouped[col.id]}
+                onAddTask={() => openCreate(col.id)}
+                onEditTask={openEdit}
+                onDeleteTask={(task) => setDeleteTarget(task)}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Drag overlay */}
